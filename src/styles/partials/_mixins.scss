@@ -1,5 +1,6 @@
 @use "./variables" as *;
 
+
 @mixin tablet {
   @media screen and (min-width: $min-tablet-breakpoint) and (max-width: $max-tablet-breakpoint) {
     @content;
