@@ -1,0 +1,18 @@
+@use '../../styles/partials/mixins' as *;
+@use '../../styles/partials/variables' as *;
+
+.footer {
+    width: 100%;
+    background-color: $background-light-grey;
+    padding: 1rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &__text {
+        @include m-body-small; 
+        color: $secondary-slate;
+        text-align: center;
+        margin: 0;
+    }
+}
