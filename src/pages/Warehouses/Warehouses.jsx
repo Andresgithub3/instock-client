@@ -11,21 +11,49 @@ import TableRow from '../../components/TableRow/TableRow';
 function Warehouses({setNavIndex, setDeleteModal}) {
     useEffect(() => {
         setNavIndex(warehousesPageIndex);
-    }, []);
+    }, [setNavIndex]);
     
     const [warehouses, setWarehouses] = useState([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [doRefresh, setDoRefresh] = useState(false);
     const currentPath = useLocation().pathname;
+    
+    // Add sort state
+    const [sortField, setSortField] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc');
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    // Check for mobile screen size
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const fetchWarehouses = async () => {
         try {
-            const warehousesResponse = await axios.get(warehousesEndpoint);
+            // Add sort parameters to the API call if we're not on mobile
+            let url = warehousesEndpoint;
+            if (!isMobile && sortField) {
+                url = `${url}?sort_by=${sortField}&order=${sortOrder}`;
+            }
+            
+            const warehousesResponse = await axios.get(url);
             setWarehouses(warehousesResponse.data);
+            console.log(warehousesResponse.data);
         } catch (error) {
             console.log(`Could not load warehouses: ${error}`);
         }
     }
+
+    // Sort handler
+    const handleSort = (field, order) => {
+        setSortField(field);
+        setSortOrder(order);
+    };
 
     const renderWarehouses = () => {
         return warehouses.map((warehouse) => {
@@ -35,9 +63,20 @@ function Warehouses({setNavIndex, setDeleteModal}) {
         });
     }
 
-
-    useEffect( () => { fetchWarehouses(); }, []);
-    useEffect( () => {
+    // Fetch warehouses on initial load
+    useEffect(() => { 
+        fetchWarehouses(); 
+    }, []);
+    
+    // Fetch warehouses when sort parameters change
+    useEffect(() => {
+        if (!isDeleting) { // Only fetch if not in delete mode
+            fetchWarehouses();
+        }
+    }, [sortField, sortOrder, isMobile]);
+    
+    // Handle delete state
+    useEffect(() => {
         if (currentPath.includes('delete')) {
             setIsDeleting(true);
             setDeleteModal(true);
@@ -45,8 +84,10 @@ function Warehouses({setNavIndex, setDeleteModal}) {
             setIsDeleting(false);
             setDeleteModal(false);
         }
-    }, [currentPath]);
-    useEffect( () => {
+    }, [currentPath, setDeleteModal]);
+    
+    // Handle refresh after delete
+    useEffect(() => {
         if (doRefresh) {
             fetchWarehouses();
             setDoRefresh(false);
@@ -61,7 +102,13 @@ function Warehouses({setNavIndex, setDeleteModal}) {
             <div className={`warehouses__page-foreground ${isDeleting ? 'warehouses__page-foreground--hide' : ''}`}>
                 <Hero heroTitle="Warehouses" buttonText="+ Add New Warehouse" addButtonUrl={'/warehouses/add'}/>
                 <section className="warehouses__table">
-                    <TableHeader labels={tableLabels}/>
+                    <TableHeader 
+                        labels={tableLabels}
+                        onSort={handleSort}
+                        currentSortField={sortField}
+                        currentSortOrder={sortOrder}
+                        isMobile={isMobile}
+                    />
                     {renderWarehouses()}
                 </section>
             </div>
